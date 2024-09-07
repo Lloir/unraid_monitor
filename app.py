@@ -3,11 +3,14 @@ from flask import Flask, jsonify, render_template, request
 import sqlite3
 import os
 import time
-import json
+import docker
 
 app = Flask(__name__)
 
 DB_PATH = '/app/cpu_memory_usage.db'  # Path to the SQLite database
+
+# Initialize Docker client
+client = docker.from_env()
 
 # Ensure the SQLite DB and table exist
 def init_db():
@@ -120,6 +123,45 @@ def get_data():
 @app.route('/')
 def index():
     return render_template('index.html')
+
+# Serve the high-usage.html page
+@app.route('/high-usage')
+def high_usage():
+    return render_template('high_usage.html')
+
+# API to get high CPU/Memory usage Docker containers
+@app.route('/api/high-usage', methods=['GET'])
+def get_high_usage():
+    try:
+        containers = []
+        for container in client.containers.list():
+            stats = container.stats(stream=False)  # Fetch container stats
+
+            # Calculate CPU percentage based on CPU delta
+            cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - stats['precpu_stats']['cpu_usage']['total_usage']
+            system_cpu_delta = stats['cpu_stats']['system_cpu_usage'] - stats['precpu_stats']['system_cpu_usage']
+            number_cpus = stats['cpu_stats']['online_cpus']
+            cpu_percentage = (cpu_delta / system_cpu_delta) * number_cpus * 100 if system_cpu_delta > 0 else 0
+
+            # Memory usage and percentage
+            memory_usage = stats['memory_stats']['usage']
+            memory_limit = stats['memory_stats']['limit']
+            memory_percentage = (memory_usage / memory_limit) * 100 if memory_limit > 0 else 0
+
+            # Append container stats to list
+            containers.append({
+                'Name': container.name,
+                'CPUPerc': f"{cpu_percentage:.2f}%",  # Format CPU percentage
+                'MemUsage': f"{memory_usage / (1024 ** 2):.2f} MiB",  # Convert bytes to MiB
+                'MemPerc': f"{memory_percentage:.2f}%"  # Format memory percentage
+            })
+
+        # Return the result as JSON
+        return jsonify(containers)
+
+    except Exception as e:
+        app.logger.error(f"Unexpected error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

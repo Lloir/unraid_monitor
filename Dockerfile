@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . /app
 
 # Install any needed packages specified in requirements.txt
-RUN pip install flask requests psutil
+RUN pip install flask requests psutil docker
 
 # Make port 5000 available to the world outside this container
 EXPOSE 5000

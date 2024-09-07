@@ -59,12 +59,20 @@
 
     <script>
         const apiUrl = "/api/high-usage";
-        
-        // Fetch container stats every second
+
+        // Fetch container stats every 5 seconds
         function fetchHighUsage() {
             fetch(apiUrl)
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error fetching high-usage data');
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    if (!Array.isArray(data)) {
+                        throw new Error('Invalid data format');
+                    }
                     const tableBody = document.getElementById('containerStats');
                     tableBody.innerHTML = '';  // Clear the table
 
@@ -78,6 +86,10 @@
                         `;
                         tableBody.appendChild(row);
                     });
+                })
+                .catch(err => {
+                    console.error('Error fetching high-usage data:', err);
+                    document.getElementById('containerStats').innerHTML = `<tr><td colspan="4">Error loading data</td></tr>`;
                 });
         }
 

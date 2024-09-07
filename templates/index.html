@@ -35,6 +35,23 @@
             padding: 10px;
             margin-top: 10px;
         }
+        /* Link/Button to High Usage page */
+        .high-usage-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .high-usage-link a {
+            padding: 10px 20px;
+            background-color: #1e90ff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .high-usage-link a:hover {
+            background-color: #007acc;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +87,11 @@
                 <option value="all">All Time</option>
             </select>
         </div>
+    </div>
+
+    <!-- Link to High Resource Usage Page -->
+    <div class="high-usage-link">
+        <a href="/high-usage">View High Resource Usage (Docker Containers)</a>
     </div>
 
     <script>
