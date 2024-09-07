@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>High Resource Usage Containers</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            color: #ffffff;
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        table, th, td {
+            border: 1px solid #ffffff;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #333;
+        }
+        tbody tr:nth-child(even) {
+            background-color: #1e1e1e;
+        }
+        .container {
+            margin: auto;
+            width: 80%;
+        }
+    </style>
+</head>
+<body>
+    <h2>High CPU/Memory Usage Docker Containers</h2>
+    <div class="container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Container Name</th>
+                    <th>CPU %</th>
+                    <th>Memory Usage</th>
+                    <th>Memory %</th>
+                </tr>
+            </thead>
+            <tbody id="containerStats">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        const apiUrl = "/api/high-usage";
+        
+        // Fetch container stats every second
+        function fetchHighUsage() {
+            fetch(apiUrl)
+                .then(response => response.json())
+                .then(data => {
+                    const tableBody = document.getElementById('containerStats');
+                    tableBody.innerHTML = '';  // Clear the table
+
+                    data.forEach(container => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${container.Name}</td>
+                            <td>${container.CPUPerc}</td>
+                            <td>${container.MemUsage}</td>
+                            <td>${container.MemPerc}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                });
+        }
+
+        // Fetch data every 5 seconds
+        setInterval(fetchHighUsage, 5000);
+        fetchHighUsage();  // Fetch on page load
+    </script>
+</body>
+</html>

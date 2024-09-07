@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Monitoring</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        h2 {
+            text-align: center;
+        }
+        canvas {
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .container {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+        }
+        .chart-container {
+            margin: 20px;
+        }
+        select {
+            background-color: #1e1e1e;
+            color: white;
+            border: none;
+            padding: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>System Monitoring Dashboard</h1>
+
+    <div class="container">
+        <!-- Per-core CPU Usage -->
+        <div class="chart-container">
+            <h2>Per-Core CPU Usage</h2>
+            <canvas id="cpuCoreChart"></canvas>
+            <select id="cpuTimeframe">
+                <option value="current">Current</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+
+        <!-- Memory Usage -->
+        <div class="chart-container">
+            <h2>Memory Usage</h2>
+            <canvas id="memoryChart"></canvas>
+            <select id="memoryTimeframe">
+                <option value="current">Current</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+
+        <!-- Network Usage -->
+        <div class="chart-container">
+            <h2>Network Usage</h2>
+            <canvas id="networkChart"></canvas>
+            <select id="networkTimeframe">
+                <option value="current">Current</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = "/api/data";
+
+        // CPU Usage Chart
+        const cpuCoreChart = new Chart(document.getElementById('cpuCoreChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: []
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Memory Usage Chart
+        const memoryChart = new Chart(document.getElementById('memoryChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Used', 'Free'],
+                datasets: [{
+                    label: 'Memory %',
+                    data: [0, 100],
+                    backgroundColor: ['rgba(54, 162, 235, 0.2)', 'rgba(255, 99, 132, 0.2)'],
+                    borderColor: ['rgba(54, 162, 235, 1)', 'rgba(255, 99, 132, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Network Usage Chart
+        const networkChart = new Chart(document.getElementById('networkChart').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: ['Rx MiB', 'Tx MiB'],
+                datasets: [{
+                    label: 'Network Usage',
+                    data: [0, 0],
+                    backgroundColor: ['rgba(255, 206, 86, 0.2)', 'rgba(153, 102, 255, 0.2)'],
+                    borderColor: ['rgba(255, 206, 86, 1)', 'rgba(153, 102, 255, 1)'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function updateCharts(timeframe = 'current') {
+            fetch(apiUrl + '?timeframe=' + timeframe)
+                .then(response => response.json())
+                .then(data => {
+                    // Update per-core CPU chart
+                    const cores = data.cpu_per_core.map((_, i) => 'Core ' + (i + 1));
+                    cpuCoreChart.data.labels = cores;
+                    cpuCoreChart.data.datasets = [{
+                        label: 'CPU Usage %',
+                        data: data.cpu_per_core,
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }];
+                    cpuCoreChart.update();
+
+                    // Update memory chart
+                    memoryChart.data.datasets[0].data = [data.memory, 100 - data.memory];
+                    memoryChart.update();
+
+                    // Update network chart
+                    networkChart.data.datasets[0].data = [data.network.rx, data.network.tx];
+                    networkChart.update();
+                });
+        }
+
+        // Update charts every second or when timeframe changes
+        document.getElementById('cpuTimeframe').addEventListener('change', (event) => {
+            updateCharts(event.target.value);
+        });
+        document.getElementById('memoryTimeframe').addEventListener('change', (event) => {
+            updateCharts(event.target.value);
+        });
+        document.getElementById('networkTimeframe').addEventListener('change', (event) => {
+            updateCharts(event.target.value);
+        });
+
+        setInterval(updateCharts, 1000);  // Real-time updates
+        updateCharts();  // Initial update
+    </script>
+</body>
+</html>
